@@ -1,0 +1,23 @@
+name: File crawling
+description: >
+  download a File or Web page (including its assets) automatically,
+  then upload them to OSS service & Git repository.
+title: (replace this with the File or Web page title)
+labels:
+  - crawler
+body:
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: Only one can be filled in for an issue.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Remark
+  - type: markdown
+    attributes:
+      value: >-
+        This template was generated with [Issue Forms
+        Creator](https://issue-forms-creator.netlify.app)

@@ -1,0 +1,68 @@
+name: Download File or Web page
+on:
+  issues:
+    types:
+      - labeled
+jobs:
+  Fetch-and-Save:
+    if: github.event.label.name == 'crawler'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: issue-parser
+        uses: stefanbuck/github-issue-parser@v3
+        with:
+          template-path: ".github/ISSUE_TEMPLATE/crawler.yml"
+
+      - name: Set URL & MIME variables
+        env:
+          URL: ${{ steps.issue-parser.outputs.issueparser_url }}
+        run: |
+          echo "URL=$URL" >> $GITHUB_ENV
+          echo "FOLDER_PATH=$(echo $URL | grep -oP '^\w+://[^/]+/?\K([^?]*)')" >> $GITHUB_ENV
+          echo "MIME_TYPE=$(curl -sI $URL | grep -oP 'Content-Type:\s+\K(\w+\/\w+)')" >> $GITHUB_ENV
+
+      - name: Download the File
+        if: env.MIME_TYPE != 'text/html'
+        run: curl -s -o "${{ env.FOLDER_PATH }}" "${{ env.URL }}"
+
+      - uses: pnpm/action-setup@v4
+        if: env.MIME_TYPE == 'text/html'
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        if: env.MIME_TYPE == 'text/html'
+        with:
+          node-version: 20
+          cache: pnpm
+      - uses: browser-actions/setup-chrome@v1
+        if: env.MIME_TYPE == 'text/html'
+
+      - name: Setup Web-fetch
+        if: env.MIME_TYPE == 'text/html'
+        run: pnpm i web-fetch -g
+
+      - name: Download the Web page & its assets
+        if: env.MIME_TYPE == 'text/html'
+        run: |
+          mkdir -p "${{ env.FOLDER_PATH }}"
+          cd "${{ env.FOLDER_PATH }}"
+          web-fetch "${{ env.URL }}"
+
+      - uses: ryand56/r2-upload-action@master
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: ${{ env.FOLDER_PATH }}
+          destination-dir: $${{ env.FOLDER_PATH }}
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: >
+            [add] ${{ github.event.issue.title }} (closes #${{ github.event.issue.number }})
