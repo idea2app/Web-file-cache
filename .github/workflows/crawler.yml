@@ -11,6 +11,13 @@ jobs:
       contents: write
       issues: write
     steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - uses: actions/checkout@v4
 
       - id: issue-parser
@@ -22,36 +29,36 @@ jobs:
         env:
           URL: ${{ steps.issue-parser.outputs.issueparser_url }}
         run: |
-          echo "URL=$URL" >> $GITHUB_ENV
-          echo "FOLDER_PATH=$(echo $URL | grep -oP '^\w+://[^/]+/?\K([^?]*)')" >> $GITHUB_ENV
-          echo "MIME_TYPE=$(curl -sI $URL | grep -oP 'Content-Type:\s+\K(\w+\/\w+)')" >> $GITHUB_ENV
+          cat >> $GITHUB_ENV <<EOF
+          FILE_URL=$URL
+          FILE_PATH=$(echo "$URL" | grep -oP '^\w+://[^/]+/?\K([^?]*)')
+          MIME_TYPE=$(curl -sI "$URL" | grep -oPi 'Content-Type:\s+\K(\w+\/\w+)')
+          EOF
+      - name: Set Path variables
+        run: |
+          pnpm i mime -g
+
+          FILE_PATH="${{ env.FILE_PATH }}.$(mime -r ${{ env.MIME_TYPE }})"
+          FOLDER_PATH="$(dirname $FILE_PATH)"
+
+          cat >> $GITHUB_ENV <<EOF
+          FILE_PATH=$FILE_PATH
+          FOLDER_PATH=$FOLDER_PATH
+          EOF
+          mkdir -p $FOLDER_PATH
 
       - name: Download the File
         if: env.MIME_TYPE != 'text/html'
-        run: curl -s -o "${{ env.FOLDER_PATH }}" "${{ env.URL }}"
+        run: curl -s -o "${{ env.FILE_PATH }}" "${{ env.FILE_URL }}"
 
-      - uses: pnpm/action-setup@v4
-        if: env.MIME_TYPE == 'text/html'
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        if: env.MIME_TYPE == 'text/html'
-        with:
-          node-version: 20
-          cache: pnpm
       - uses: browser-actions/setup-chrome@v1
         if: env.MIME_TYPE == 'text/html'
-
-      - name: Setup Web-fetch
-        if: env.MIME_TYPE == 'text/html'
-        run: pnpm i web-fetch -g
 
       - name: Download the Web page & its assets
         if: env.MIME_TYPE == 'text/html'
         run: |
-          mkdir -p "${{ env.FOLDER_PATH }}"
-          cd "${{ env.FOLDER_PATH }}"
-          web-fetch "${{ env.URL }}"
+          cd ${{ env.FOLDER_PATH }}
+          pnpx web-fetch "${{ env.FILE_URL }}"
 
       - uses: ryand56/r2-upload-action@master
         with:
@@ -59,8 +66,18 @@ jobs:
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: ${{ env.FOLDER_PATH }}
-          destination-dir: $${{ env.FOLDER_PATH }}
+          source-dir: "${{ env.FILE_PATH }}"
+          destination-dir: "${{ env.FOLDER_PATH }}"
+
+      - uses: ryand56/r2-upload-action@master
+        if: env.MIME_TYPE == 'text/html'
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: "${{ env.FILE_PATH }}.html"
+          destination-dir: "${{ env.FOLDER_PATH }}"
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
