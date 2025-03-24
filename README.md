@@ -7,7 +7,8 @@ Web file cache service based on [GitHub actions][1]
 ## Technologies
 
 - Crawler: [`web-fetch`][3] ([Puppeteer][4] based)
-- OSS service: [Cloudflare R2][5]
+- CDN: [JSDelivr][5]
+- OSS service: [Cloudflare R2][6]
 
 ## Usage
 
@@ -15,11 +16,11 @@ Web file cache service based on [GitHub actions][1]
 
 1.  Install GitHub apps in your organization or account:
 
-    1.  [Probot settings][6]: set up Issue labels & Pull Request rules
+    1.  [Probot settings][7]: set up Issue labels & Pull Request rules
 
-2.  Click the **[<kbd>Use this template</kbd>][7] button** on the top of this GitHub repository's home page, then create your own repository in the app-installed namespace above
+2.  Click the **[<kbd>Use this template</kbd>][8] button** on the top of this GitHub repository's home page, then create your own repository in the app-installed namespace above
 
-3.  Set Cloudflare variables is [`.github/workflows/crawler.yml`][8] as [Repository secrets][9]
+3.  Set Cloudflare variables is [`.github/workflows/crawler.yml`][9] as [Repository secrets][10]
 
 ### Manual cache
 
@@ -42,8 +43,9 @@ curl -L \
 [2]: https://github.com/idea2app/Web-file-cache/actions/workflows/crawler.yml
 [3]: https://github.com/TechQuery/Web-fetch
 [4]: https://pptr.dev/
-[5]: https://www.cloudflare.com/developer-platform/products/r2/
-[6]: https://github.com/apps/settings
-[7]: https://github.com/new?template_name=Web-file-cache&template_owner=idea2app
-[8]: .github/workflows/crawler.yml
-[9]: https://github.com/idea2app/Web-file-cache/settings/secrets/actions
+[5]: https://www.jsdelivr.com/
+[6]: https://www.cloudflare.com/developer-platform/products/r2/
+[7]: https://github.com/apps/settings
+[8]: https://github.com/new?template_name=Web-file-cache&template_owner=idea2app
+[9]: .github/workflows/crawler.yml
+[10]: https://github.com/idea2app/Web-file-cache/settings/secrets/actions

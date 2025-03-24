@@ -3,6 +3,9 @@ on:
   issues:
     types:
       - labeled
+env:
+  R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
 jobs:
   Fetch-and-Save:
     if: github.event.label.name == 'crawler'
@@ -16,7 +19,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: actions/checkout@v4
 
@@ -47,6 +50,16 @@ jobs:
           EOF
           mkdir -p $FOLDER_PATH
 
+      - name: Comment Cache URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat >> comment.md <<EOF
+          - The GitHub action URL is: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - JSDelivr URL: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${{ github.ref_name }}/${{ env.FILE_PATH }}
+          EOF
+          gh issue comment ${{ github.event.issue.number }} --body-file comment.md
+
       - name: Download the File
         if: env.MIME_TYPE != 'text/html'
         run: curl -s -o "${{ env.FILE_PATH }}" "${{ env.FILE_URL }}"
@@ -61,6 +74,7 @@ jobs:
           pnpx web-fetch "${{ env.FILE_URL }}"
 
       - uses: ryand56/r2-upload-action@master
+        if: env.R2_ACCOUNT_ID != ''
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -79,7 +93,12 @@ jobs:
           source-dir: "${{ env.FILE_PATH }}.html"
           destination-dir: "${{ env.FOLDER_PATH }}"
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: >
-            [add] ${{ github.event.issue.title }} (closes #${{ github.event.issue.number }})
+      - name: Git commit
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add .
+          git commit -m "[add] ${{ github.event.issue.title }} (closes #${{ github.event.issue.number }})"
+          git fetch
+          git rebase origin/main
+          git push
