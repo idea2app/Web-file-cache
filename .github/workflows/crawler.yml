@@ -14,7 +14,7 @@ env:
 
 jobs:
   Fetch-and-Save:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'crawler'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && github.event.label.name == 'crawler')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -37,7 +37,7 @@ jobs:
 
       - name: Set URL & MIME variables
         env:
-          URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || steps.issue-parser.outputs.issueparser_url }}
+          URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || (github.event_name == 'issues' && steps.issue-parser.outputs.issueparser_url) }}
         run: |
           cat >> $GITHUB_ENV <<EOF
           FILE_URL=$URL
