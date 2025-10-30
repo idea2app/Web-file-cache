@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'URL of the file or web page to download'
+        description: 'URL of the file or Web page to download'
         required: true
         type: string
 env:

@@ -28,8 +28,6 @@ https://github.com/idea2app/Web-file-cache/issues/new?template=crawler.yml
 
 ### Automatic cache
 
-#### Method 1: Using workflow_dispatch (Recommended)
-
 ```shell
 URL="https://example.com/test.html"
 
@@ -40,19 +38,6 @@ curl -L \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   -d "{\"ref\":\"main\",\"inputs\":{\"url\":\"$URL\"}}" \
   https://api.github.com/repos/idea2app/Web-file-cache/actions/workflows/crawler.yml/dispatches
-```
-
-#### Method 2: Using issues API
-
-```shell
-URL="https://example.com/test.html"
-
-curl -L \
-  -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer <YOUR-TOKEN>" \
-  -d "{\"title\":\"File title\",\"body\":\"### URL\n\n$URL\",\"labels\":[\"crawler\"]}" \
-  https://api.github.com/repos/idea2app/Web-file-cache/issues
 ```
 
 [1]: https://github.com/features/actions
