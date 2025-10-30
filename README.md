@@ -37,7 +37,7 @@ curl -L \
   -H "Authorization: Bearer <YOUR-TOKEN>" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   -d "{\"ref\":\"main\",\"inputs\":{\"url\":\"$URL\"}}" \
-  https://api.github.com/repos/idea2app/Web-file-cache/actions/workflows/crawler.yml/dispatches
+  https://api.github.com/repos/your-namespace/Web-file-cache/actions/workflows/crawler.yml/dispatches
 ```
 
 [1]: https://github.com/features/actions
