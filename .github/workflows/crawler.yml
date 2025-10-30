@@ -3,12 +3,18 @@ on:
   issues:
     types:
       - labeled
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL of the file or web page to download'
+        required: true
+        type: string
 env:
   R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
 
 jobs:
   Fetch-and-Save:
-    if: github.event.label.name == 'crawler'
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'crawler'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,13 +30,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - id: issue-parser
+        if: github.event_name == 'issues'
         uses: stefanbuck/github-issue-parser@v3
         with:
           template-path: ".github/ISSUE_TEMPLATE/crawler.yml"
 
       - name: Set URL & MIME variables
         env:
-          URL: ${{ steps.issue-parser.outputs.issueparser_url }}
+          URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || steps.issue-parser.outputs.issueparser_url }}
         run: |
           cat >> $GITHUB_ENV <<EOF
           FILE_URL=$URL
@@ -51,6 +58,7 @@ jobs:
           mkdir -p $FOLDER_PATH
 
       - name: Comment Cache URLs
+        if: github.event_name == 'issues'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -98,7 +106,11 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git add .
-          git commit -m "[add] ${{ github.event.issue.title }} (closes #${{ github.event.issue.number }})"
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            git commit -m "[add] ${{ github.event.issue.title }} (closes #${{ github.event.issue.number }})"
+          else
+            git commit -m "[add] Cache file from workflow_dispatch: ${{ inputs.url }}"
+          fi
           git fetch
           git rebase origin/main
           git push
